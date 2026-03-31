@@ -10,7 +10,7 @@ from datetime import datetime
 
 from news_collector import collect_all_news
 from ai_summarizer import generate_post
-from tistory_poster import post_article
+from wordpress_poster import post_article
 
 # 중복 포스팅 방지를 위한 파일
 POSTED_URLS_FILE = "posted_urls.json"

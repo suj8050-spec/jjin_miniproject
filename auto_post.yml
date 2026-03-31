@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    
+    # 💡 여기에 환경 변수를 추가하여 Node.js 20 경고를 해결합니다.
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     steps:
       - name: 📥 코드 체크아웃

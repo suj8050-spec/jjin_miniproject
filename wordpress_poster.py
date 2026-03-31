@@ -1,6 +1,6 @@
 """
 wordpress_poster.py
-WordPress.com 전용 REST API v1.1로 포스트를 업로드합니다.
+WordPress.com OAuth2로 포스트를 업로드합니다.
 """
 
 import os
@@ -9,21 +9,22 @@ import requests
 WORDPRESS_SITE = os.environ["WORDPRESS_SITE"]
 WORDPRESS_USERNAME = os.environ["WORDPRESS_USERNAME"]
 WORDPRESS_PASSWORD = os.environ["WORDPRESS_PASSWORD"]
+WORDPRESS_CLIENT_ID = os.environ["WORDPRESS_CLIENT_ID"]
+WORDPRESS_CLIENT_SECRET = os.environ["WORDPRESS_CLIENT_SECRET"]
 
-# WordPress.com 전용 API (wp-json 아님!)
 API_BASE = f"https://public-api.wordpress.com/rest/v1.1/sites/{WORDPRESS_SITE}"
 
 
 def get_token() -> str:
-    """WordPress.com 계정으로 토큰 발급"""
+    """WordPress.com OAuth2 토큰 발급"""
     res = requests.post(
         "https://public-api.wordpress.com/oauth2/token",
         data={
             "username": WORDPRESS_USERNAME,
             "password": WORDPRESS_PASSWORD,
             "grant_type": "password",
-            "client_id": "90674",        # WordPress.com 공식 앱 ID
-            "client_secret": "Y53xB9sIqHBM1RIQB1EVo1Ip2MVoJLyNBSSKDg5bH8h4e5XKTmXPAovzDFvEaHdA",
+            "client_id": WORDPRESS_CLIENT_ID,
+            "client_secret": WORDPRESS_CLIENT_SECRET,
         },
         timeout=15,
     )

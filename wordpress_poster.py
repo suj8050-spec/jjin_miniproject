@@ -1,67 +1,59 @@
 """
 wordpress_poster.py
-WordPress.com REST API를 사용해 포스트를 업로드합니다.
+WordPress.com REST API를 Basic Auth로 포스트를 업로드합니다.
 """
 
 import os
 import requests
+from requests.auth import HTTPBasicAuth
 
 WORDPRESS_SITE = os.environ["WORDPRESS_SITE"]
 WORDPRESS_USERNAME = os.environ["WORDPRESS_USERNAME"]
 WORDPRESS_PASSWORD = os.environ["WORDPRESS_PASSWORD"]
 
-API_BASE = f"https://public-api.wordpress.com/wp/v2/sites/{WORDPRESS_SITE}"
-
-
-def get_auth_token() -> str:
-    """WordPress.com OAuth 토큰 발급"""
-    res = requests.post(
-        "https://public-api.wordpress.com/oauth2/token",
-        data={
-            "username": WORDPRESS_USERNAME,
-            "password": WORDPRESS_PASSWORD,
-            "grant_type": "password",
-            "client_id": "0",
-            "client_secret": "anonymous",
-        },
-        timeout=15,
-    )
-    data = res.json()
-    token = data.get("access_token")
-    if not token:
-        raise Exception(f"토큰 발급 실패: {data}")
-    return token
+API_BASE = f"https://{WORDPRESS_SITE}/wp-json/wp/v2"
 
 
 def post_article(post: dict) -> str | None:
-    """
-    워드프레스에 포스트 업로드
-    반환값: 성공 시 포스트 URL, 실패 시 None
-    """
     try:
-        token = get_auth_token()
+        auth = HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
 
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
+        tags_str = post.get("tags", "")
+        tag_names = [t.strip() for t in tags_str.split(",") if t.strip()]
 
-        # 태그 문자열을 리스트로 변환
-        tags = [t.strip() for t in post.get("tags", "").split(",") if t.strip()]
+        tag_ids = []
+        for tag_name in tag_names:
+            res = requests.get(
+                f"{API_BASE}/tags",
+                params={"search": tag_name},
+                auth=auth,
+                timeout=10,
+            )
+            tags_data = res.json()
+            if tags_data:
+                tag_ids.append(tags_data[0]["id"])
+            else:
+                res = requests.post(
+                    f"{API_BASE}/tags",
+                    json={"name": tag_name},
+                    auth=auth,
+                    timeout=10,
+                )
+                if res.status_code in (200, 201):
+                    tag_ids.append(res.json()["id"])
 
         payload = {
             "title": post["title"],
             "content": post["content"],
-            "status": "publish",       # 바로 공개
-            "tags": tags,
-            "categories": [],
+            "status": "publish",
+            "tags": tag_ids,
             "format": "standard",
         }
 
         res = requests.post(
             f"{API_BASE}/posts",
-            headers=headers,
             json=payload,
+            auth=auth,
             timeout=30,
         )
 
